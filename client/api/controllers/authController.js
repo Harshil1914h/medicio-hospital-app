@@ -3,93 +3,113 @@ import jwt from 'jsonwebtoken';
 import mongoose from 'mongoose';
 
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'supersecretkey', { expiresIn: '30d' });
+  return jwt.sign({ id }, process.env.JWT_SECRET || 'medicio_supersecret_jwt_2026', { expiresIn: '30d' });
 };
 
-// In-memory fallback if MongoDB Atlas is not yet connected
-const memoryUsers = [
-  { _id: '1', name: 'Demo Patient', email: 'patient@medicio.com', password: 'password', role: 'patient' },
-  { _id: '2', name: 'Demo Admin', email: 'admin@medicio.com', password: 'admin', role: 'admin' },
+// ─── Demo users for fallback mode (when no MongoDB is connected) ─────────────
+// These allow ANY device to login without a database
+const demoUsers = [
+  { _id: 'd1', name: 'Demo Patient', email: 'patient@medicio.com', password: 'password123', role: 'patient' },
+  { _id: 'd2', name: 'Admin User', email: 'admin@medicio.com', password: 'admin123', role: 'admin' },
 ];
 
+// In-memory user store (survives within one serverless instance lifecycle)
+const memoryUsers = [...demoUsers];
+
+// ─── REGISTER ────────────────────────────────────────────────────────────────
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password, role = 'patient' } = req.body;
 
-    if (mongoose.connection.readyState === 1) {
-      const userExists = await User.findOne({ email });
-      if (userExists) return res.status(400).json({ message: 'User already exists' });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: 'Name, email, and password are required.' });
+    }
 
-      const user = await User.create({ name, email, password, role });
+    // MongoDB path
+    if (mongoose.connection.readyState === 1) {
+      const userExists = await User.findOne({ email: email.toLowerCase() });
+      if (userExists) return res.status(400).json({ message: 'An account with this email already exists.' });
+
+      const user = await User.create({ name, email: email.toLowerCase(), password, role });
       return res.status(201).json({
-        message: 'Registration successful',
+        message: 'Registration successful!',
         user: { _id: user._id, name: user.name, email: user.email, role: user.role },
-        token: generateToken(user._id)
+        token: generateToken(user._id),
       });
     }
 
-    // Fallback mode if MongoDB URI not configured
+    // Fallback/demo path
     const existing = memoryUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (existing) return res.status(400).json({ message: 'User already exists' });
+    if (existing) return res.status(400).json({ message: 'An account with this email already exists.' });
 
-    const newUser = { _id: 'mem_' + Date.now(), name, email, password, role };
+    const newUser = { _id: 'mem_' + Date.now(), name, email: email.toLowerCase(), password, role };
     memoryUsers.push(newUser);
 
     return res.status(201).json({
-      message: 'Registration successful (Demo Mode)',
+      message: 'Registration successful!',
       user: { _id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role },
-      token: generateToken(newUser._id)
+      token: generateToken(newUser._id),
     });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Register Error:', error.message);
+    res.status(500).json({ message: 'Server error during registration.' });
   }
 };
 
+// ─── LOGIN ───────────────────────────────────────────────────────────────────
 export const loginUser = async (req, res) => {
   try {
     const { email, password, role } = req.body;
 
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required.' });
+    }
+
+    // MongoDB path
     if (mongoose.connection.readyState === 1) {
-      const user = await User.findOne({ email });
-      if (user && (await user.matchPassword(password))) {
-        if (user.role !== role) {
-          return res.status(401).json({ message: 'Invalid role for this account' });
-        }
-        return res.json({
-          message: 'Login successful',
-          user: { _id: user._id, name: user.name, email: user.email, role: user.role },
-          token: generateToken(user._id)
-        });
+      const user = await User.findOne({ email: email.toLowerCase() });
+      if (!user) {
+        return res.status(401).json({ message: 'No account found with this email.' });
       }
-      return res.status(401).json({ message: 'Invalid email or password' });
-    }
 
-    // Fallback mode if MongoDB URI not configured
-    const user = memoryUsers.find(u => u.email.toLowerCase() === (email || '').toLowerCase());
-    if (user && user.password === password) {
+      const isMatch = await user.matchPassword(password);
+      if (!isMatch) {
+        return res.status(401).json({ message: 'Incorrect password.' });
+      }
+
       if (role && user.role !== role) {
-        return res.status(401).json({ message: `Role mismatch: this account is registered as ${user.role}` });
+        return res.status(401).json({ message: `This account is registered as "${user.role}", not "${role}".` });
       }
-      return res.json({
-        message: 'Login successful (Demo Mode)',
-        user: { _id: user._id, name: user.name, email: user.email, role: user.role },
-        token: generateToken(user._id)
-      });
-    }
 
-    // If no user found in demo list, allow login with any demo password for seamless testing
-    if (password && email) {
-      const fallbackUser = { _id: 'user_' + Date.now(), name: email.split('@')[0], email, role: role || 'patient' };
-      memoryUsers.push({ ...fallbackUser, password });
       return res.json({
         message: 'Login successful',
-        user: fallbackUser,
-        token: generateToken(fallbackUser._id)
+        user: { _id: user._id, name: user.name, email: user.email, role: user.role },
+        token: generateToken(user._id),
       });
     }
 
-    res.status(401).json({ message: 'Invalid email or password' });
+    // Fallback/demo path
+    const user = memoryUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+    if (!user) {
+      return res.status(401).json({ message: 'No account found with this email. Please register first.' });
+    }
+
+    if (user.password !== password) {
+      return res.status(401).json({ message: 'Incorrect password.' });
+    }
+
+    if (role && user.role !== role) {
+      return res.status(401).json({ message: `This account is registered as "${user.role}", not "${role}".` });
+    }
+
+    return res.json({
+      message: 'Login successful',
+      user: { _id: user._id, name: user.name, email: user.email, role: user.role },
+      token: generateToken(user._id),
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Login Error:', error.message);
+    res.status(500).json({ message: 'Server error during login.' });
   }
 };
