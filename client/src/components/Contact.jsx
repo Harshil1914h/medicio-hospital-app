@@ -25,7 +25,14 @@ export default function Contact() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        alert(`Server error (${response.status}): Contact service temporarily unavailable.`);
+        return;
+      }
 
       if (data.success) {
         alert("Thank you! Your message has been sent successfully.");
@@ -35,7 +42,7 @@ export default function Contact() {
       }
     } catch (error) {
       console.error(error);
-      alert("Server connection failed!");
+      alert(error.message || "Server connection failed!");
     } finally {
       setLoading(false);
     }

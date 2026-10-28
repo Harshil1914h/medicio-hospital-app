@@ -12,7 +12,11 @@ export default function MyAppointments() {
     const fetchAppointments = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/api/appointments/my-appointments/${user.email}`);
-        const data = await response.json();
+        let data = [];
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          data = await response.json();
+        }
         
         if (response.ok) {
           setAppointments(data);

@@ -27,7 +27,14 @@ export default function Appointment() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
-      const data = await res.json();
+      let data;
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      } else {
+        alert(`Server error (${res.status}): Appointment service temporarily unavailable.`);
+        return;
+      }
       
       if (res.ok) {
         alert(`Success! Appointment saved for ${formData.patientName}!`);
@@ -37,7 +44,7 @@ export default function Appointment() {
       }
     } catch (error) {
       console.error("Error booking appointment", error);
-      alert("Server connection failed!");
+      alert(error.message || "Server connection failed!");
     }
   };
 

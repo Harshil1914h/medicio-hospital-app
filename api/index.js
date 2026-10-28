@@ -24,7 +24,7 @@ const connectDB = async () => {
     return;
   }
   const uri = process.env.MONGO_URI;
-  if (!uri) {
+  if (!uri || uri.includes('localhost') || uri.includes('127.0.0.1')) {
     return;
   }
   try {
