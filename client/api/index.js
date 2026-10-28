@@ -47,7 +47,7 @@ app.use(async (req, res, next) => {
 });
 
 // Health check endpoint
-app.get('/api', (req, res) => {
+app.get(['/api', '/'], (req, res) => {
   res.json({
     status: "ok",
     service: "Medicio Hospital API",
@@ -55,12 +55,23 @@ app.get('/api', (req, res) => {
   });
 });
 
-// Mount Routes
+// Mount Routes (supporting both /api/xxx and /xxx for rewrite compatibility)
 app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
+
 app.use('/api/appointments', appointmentRoutes);
+app.use('/appointments', appointmentRoutes);
+
 app.use('/api/medicines', medicineRoutes);
+app.use('/medicines', medicineRoutes);
+
 app.use('/api/doctors', doctorRoutes);
+app.use('/doctors', doctorRoutes);
+
 app.use('/api/contacts', contactRoutes);
+app.use('/contacts', contactRoutes);
+
 app.use('/api', patientDashboardRoutes);
+app.use('/', patientDashboardRoutes);
 
 export default app;

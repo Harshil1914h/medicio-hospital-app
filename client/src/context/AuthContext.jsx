@@ -26,7 +26,13 @@ export const AuthProvider = ({ children }) => {
         body: JSON.stringify(credentials),
       });
 
-      const data = await response.json();
+      let data;
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        return { success: false, error: `API Error (${response.status}): ${response.statusText || 'Endpoint unavailable'}` };
+      }
 
       // Jo backend thi 200 OK status aave to login success
       if (response.ok) {
@@ -43,7 +49,7 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (error) {
       console.error("Login API Error:", error);
-      return { success: false, error: "Backend server sathe connect nathi thai rahyu. Server chalu che?" };
+      return { success: false, error: error.message || "Backend connection failed." };
     }
   };
 
