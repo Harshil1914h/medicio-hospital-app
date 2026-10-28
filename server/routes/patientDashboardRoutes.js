@@ -1,7 +1,7 @@
 import express from 'express';
 import Appointment from '../models/MyAppointment.js'; // જો તમારી પાસે અપોઇન્ટમેન્ટનું મોડેલ હોય તો
 import Prescription from '../models/Prescription.js';
-import Bill from '../models/Bill.js'; // જો બિલનું મોડેલ હોય તો, નહીંતર નીચે મુજબ
+// import Bill from '../models/Bill.js'; // જો બિલનું મોડેલ હોય તો, નહીંતર નીચે મુજબ
 
 const router = express.Router();
 
