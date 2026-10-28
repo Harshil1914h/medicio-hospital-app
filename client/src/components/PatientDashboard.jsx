@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import axios from "axios";
+import { API_BASE_URL } from "../config";
 
 export default function PatientDashboard() {
   const { user } = useAuth();
@@ -29,7 +30,7 @@ export default function PatientDashboard() {
         
         // Try fetching from backend, if backend is not running, fallback to dummy data so UI doesn't break
         try {
-          const aptRes = await axios.get(`http://localhost:5000/api/appointments/patient/${user?.id || '1'}`);
+          const aptRes = await axios.get(`${API_BASE_URL}/api/appointments/patient/${user?.id || '1'}`);
           if(aptRes.data && aptRes.data.length > 0) {
             setAppointments(aptRes.data);
           } else {
@@ -99,7 +100,7 @@ export default function PatientDashboard() {
       };
 
       try {
-        const response = await axios.post("http://localhost:5000/api/appointments/book", appointmentData);
+        const response = await axios.post(`${API_BASE_URL}/api/appointments/book`, appointmentData);
         setAppointments([response.data, ...appointments]);
       } catch (err) {
         // Fallback local state update if backend is off

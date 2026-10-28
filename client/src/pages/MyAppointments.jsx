@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
+import { API_BASE_URL } from "../config";
 
 
 export default function MyAppointments() {
@@ -10,7 +11,7 @@ export default function MyAppointments() {
   useEffect(() => {
     const fetchAppointments = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/appointments/my-appointments/${user.email}`);
+        const response = await fetch(`${API_BASE_URL}/api/appointments/my-appointments/${user.email}`);
         const data = await response.json();
         
         if (response.ok) {
@@ -31,7 +32,7 @@ export default function MyAppointments() {
   const handleCancel = async (id) => {
     if (window.confirm("Are you sure you want to cancel this appointment?")) {
       try {
-        const response = await fetch(`http://localhost:5000/api/appointments/cancel/${id}`, {
+        const response = await fetch(`${API_BASE_URL}/api/appointments/cancel/${id}`, {
           method: 'DELETE',
         });
         

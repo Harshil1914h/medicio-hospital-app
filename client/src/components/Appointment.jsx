@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import { API_BASE_URL } from "../config";
 
 export default function Appointment() {
   const { user } = useAuth();
@@ -21,7 +22,7 @@ export default function Appointment() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5000/api/appointments/book', {
+      const res = await fetch(`${API_BASE_URL}/api/appointments/book`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
