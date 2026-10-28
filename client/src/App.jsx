@@ -2,7 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import Appointment from "./components/Appointment";
 import Navbar from "./components/Navbar";
-import Footer from "./components/Footer"; // Footer import karyu
+import Footer from "./components/Footer";
 import Hero from "./components/Hero"; 
 import Services from "./components/Services";
 import Departments from "./components/Departments";
@@ -19,6 +19,8 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import MyAppointments from "./pages/MyAppointments";
 import ForgotPassword from "./pages/ForgotPassword";
+import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
 
 const RequireAuth = ({ children }) => {
   const { user } = useAuth();
@@ -38,34 +40,38 @@ function AppRoutes() {
   return (
     <Router>
       <div className="flex flex-col min-h-screen">
-        {user && <Navbar />} 
+        <Navbar />
         
         <div className="flex-grow">
           <Routes>
+            {/* Public Pages */}
+            <Route path="/" element={<Hero />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/departments" element={<Departments />} />
+            <Route path="/doctors" element={<Doctors />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+
+            {/* Auth Pages */}
             <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
             <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
             <Route path="/forgot-password" element={!user ? <ForgotPassword /> : <Navigate to="/" />} />
+
+            {/* Protected Patient Routes */}
             <Route path="/appointment" element={<RequireAuth><Appointment /></RequireAuth>} />
-            <Route path="/" element={<RequireAuth><Hero /></RequireAuth>} />
-            <Route path="/services" element={<RequireAuth><Services /></RequireAuth>} />
-            <Route path="/departments" element={<RequireAuth><Departments /></RequireAuth>} />
-            <Route path="/doctors" element={<RequireAuth><Doctors /></RequireAuth>} />
+            <Route path="/dashboard" element={<RequireAuth><PatientDashboard /></RequireAuth>} />
+            <Route path="/my-appointments" element={<RequireAuth><MyAppointments /></RequireAuth>} />
             
-            {/* Admin Routes */}
+            {/* Protected Admin Routes */}
             <Route path="/beds" element={<RequireAdmin><BedManagement /></RequireAdmin>} />
             <Route path="/schedule" element={<RequireAdmin><DoctorSchedule /></RequireAdmin>} />
             <Route path="/patients" element={<RequireAdmin><PatientManagement /></RequireAdmin>} />
             <Route path="/billing" element={<RequireAdmin><BillingManagement /></RequireAdmin>} />
             <Route path="/medicines" element={<RequireAdmin><MedicineManagement /></RequireAdmin>} />
-
-            {/* Patient Routes */}
-            <Route path="/dashboard" element={<RequireAuth><PatientDashboard /></RequireAuth>} />
-            <Route path="/my-appointments" element={<RequireAuth><MyAppointments /></RequireAuth>} />
           </Routes>
         </div>
 
-        {/* Footer badha page ni niche dekhase */}
-        {user && <Footer />}
+        <Footer />
       </div>
     </Router>
   );
